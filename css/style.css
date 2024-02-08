@@ -1,1 +1,5 @@
-/*Add CSS styles here*/
+#map {
+    height: 650px;
+    width: 100%;
+    display: inline-block;
+}
