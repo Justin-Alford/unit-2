@@ -32,7 +32,7 @@ function onEachFeature(feature, layer) {
 //function to retrieve the data and place it on the map
 function getData(){
     //load the data
-    fetch("data/WI_Dams_2022.geojson")
+    fetch("data/map.geojson")
         .then(function(response){
             return response.json();
         })
