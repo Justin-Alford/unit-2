@@ -3,28 +3,71 @@ var map;
 var minValue;
 var attributes;
 var index = 0;
+var dataStats = {}; 
+
+
+// Add event listeners for splash screen
+document.addEventListener('DOMContentLoaded', function () {
+    const splashScreen = document.getElementById('splash-screen');
+    const closeButton = document.getElementById('close-splash');
+    
+    // Add event listener to close the splash screen when clicked
+    closeButton.addEventListener('click', function () {
+        splashScreen.style.display = 'none';
+    });
+});
+
 
 // Function to instantiate the Leaflet map
 function createMap(){
 
     // Create the map
     map = L.map('map', {
-        center: [43, -100],
-        zoom: 3
+        center: [36, -92],
+        zoom: 4
     });
-
-    // Add OSM base tilelayer
-    L.tileLayer('http://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-        attribution: '&copy; <a href="http://www.openstreetmap.org/copyright">OpenStreetMap contributors</a>'
+    
+    // Add CartoDB Positron basemap
+    var CartoDB_Positron = L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
+        attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>',
+        subdomains: 'abcd',
+        maxZoom: 20
     }).addTo(map);
+    
+    // Add OSM base tilelayer
+    var OSM = L.tileLayer('http://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        maxZoom: 20,
+        attribution: '&copy; <a href="http://www.openstreetmap.org/copyright">OpenStreetMap contributors</a>'
+    });
+    
+    // Add USGS basemap
+    var USGS = L.tileLayer('https://basemap.nationalmap.gov/arcgis/rest/services/USGSTopo/MapServer/tile/{z}/{y}/{x}', {
+         maxZoom: 20,
+         attribution: 'Tiles courtesy of the <a href="https://usgs.gov/">U.S. Geological Survey</a>'
+    });
+    
+    // Add USGS Imagery basemap
+    var USGS_USImageryTopo = L.tileLayer('https://basemap.nationalmap.gov/arcgis/rest/services/USGSImageryTopo/MapServer/tile/{z}/{y}/{x}', {
+		maxZoom: 20,
+		attribution: 'Tiles courtesy of the <a href="https://usgs.gov/">U.S. Geological Survey</a>'
+	});
+    
+    var baseMaps = {
+        "CartoDB Positron": CartoDB_Positron,
+        "OpenStreetMap": OSM,
+        "USGS Topo Map": USGS,
+        "USGS Imagery": USGS_USImageryTopo,
+	};
+    
+    layerControl = L.control.layers(baseMaps).addTo(map);
 
     // Call getData function
     getData();
 };
 
 
-// Calculate min value
-function calculateMinValue(data){
+// Calculate stats
+function calcStats(data){
     
     // Create empty array to store all data values
     var allValues = [];
@@ -42,10 +85,14 @@ function calculateMinValue(data){
               allValues.push(value);
         }
     }
-    // Get minimum value of array
-    var minValue = Math.min(...allValues)
-
-    return minValue;
+    
+    // Get min, max stats
+    dataStats.min = Math.min(...allValues);
+    dataStats.max = Math.max(...allValues);
+    
+    // Calculate mean
+    var sum = allValues.reduce(function(a, b){return a+b;});
+    dataStats.mean = sum/ allValues.length;
 }
 
 
@@ -56,7 +103,7 @@ function calcPropRadius(attValue) {
     var minRadius = 3;
     
     // Flannery Apperance Compensation formula
-    var radius = 1.0083 * Math.pow(attValue/minValue,0.5715) * minRadius
+    var radius = 1.0083 * Math.pow(attValue/dataStats.min,0.5715) * minRadius
 
     return radius;
 };
@@ -76,7 +123,7 @@ function pointToLayer(feature, latlng){
     
     // Create marker options
     var options = {
-        fillColor: "#ff7800",
+        fillColor: "#f20a0a",
         color: "#000",
         weight: 1,
         opacity: 1,
@@ -88,8 +135,7 @@ function pointToLayer(feature, latlng){
     var layer = L.circleMarker(latlng, options);
 
     // Build popup content string
-    var popupContent = "<p><b>" + feature.properties.State.toUpperCase() + "</b>" ;
-    popupContent += "<br><br>In <b>" + attribute.slice(-4) + "</b>, <b>" + feature.properties[attribute] + "%</b> of people 25 years old or over with a bachelor's degree are in <b>poverty</b></p>";
+    var popupContent = createPopupContent(feature.properties, attribute);
     
     // Bind the popup to the circle marker
     layer.bindPopup(popupContent, { offset: new L.Point(0,-radius) });
@@ -111,68 +157,102 @@ function createPropSymbols(data, attributes){
 };
 
 
+// Create popup
+function createPopupContent(properties, attribute){
+    
+    // Build popup content string
+    var popupContent = "<p><b>" + properties.State.toUpperCase() + "</b>" ;
+
+    // Add formatted attribute to content string
+    var year = attribute.split("_")[4];
+    popupContent += "<br><br>In <b>" + attribute.slice(-4) + "</b>, <b>" + properties[attribute] + "%</b> of people 25 years old or over with a bachelor's degree were in <b>poverty</b></p>";
+
+    return popupContent;
+};
+
+
 // Create new sequence controls
 function createSequenceControls(){
-    //create range input element (slider)
-    var slider = "<input class='range-slider' type='range'></input>";
-    document.querySelector("#panel").insertAdjacentHTML('beforeend',slider);
+    var SequenceControl = L.Control.extend({
+        options: {
+            position: 'bottomleft'
+        },
 
-// Set slider attributes
-var rangeSlider = document.querySelector(".range-slider");   
-rangeSlider.max = 6;
-rangeSlider.min = 0;
-rangeSlider.value = 0;
-rangeSlider.step = 1;
-    
-// Add step buttons
-var reverseButton = "<button class='step' id='reverse'><img src='img/reverse.png'></button>";
-var forwardButton = "<button class='step' id='forward'><img src='img/forward.png'></button>";
-document.querySelector('#panel').insertAdjacentHTML('beforeend', reverseButton);
-document.querySelector('#panel').insertAdjacentHTML('beforeend', forwardButton);
-    
-// Click listener for step buttons
-document.querySelectorAll('.step').forEach(function(step){
-    step.addEventListener("click", function(){
-        
-        // Get the current index value from the slider
-        var index = Number(document.querySelector('.range-slider').value);
+        onAdd: function () {
+            // Create the control container div
+            var container = L.DomUtil.create('div', 'sequence-control-container');
 
-        // Increment or decrement depending on button clicked
-        if (step.id == 'forward'){
-            index++;
-            
-            // If past the last attribute, wrap around to first attribute
-            index = index > 6 ? 0 : index;
-            
-        } else if (step.id == 'reverse'){
-            index--;
-            
-            // If past the first attribute, wrap around to last attribute
-            index = index < 0 ? 6 : index;
-        };
+            // Create slider
+			container.insertAdjacentHTML('beforeend', '<input class="range-slider" type="range">')
+			
+			// Add skip buttons
+			container.insertAdjacentHTML('beforeend', '<button class="step" id="reverse" title="Reverse"><img src="img/reverse.png"></button>'); 
+			container.insertAdjacentHTML('beforeend', '<button class="step" id="forward" title="Forward"><img src="img/forward.png"></button>');
+			
+			// Disable mouse event listeners for container
+			L.DomEvent.disableClickPropagation(container);
 
-        // Update slider
-        document.querySelector('.range-slider').value = index;
-
-        // Update the proportional symbols
-        updatePropSymbols(attributes[index]);
+            return container;
+        }
     });
-});
 
-// Add input listener for the slider
-document.querySelector('.range-slider').addEventListener('input', function () {
+    map.addControl(new SequenceControl());
     
-// Get the new index value from the slider
-var index = this.value;
-    
-// Update the proportional symbols
-updatePropSymbols(attributes[index]);
-});
+    // Set slider attributes
+    var rangeSlider = document.querySelector(".range-slider");   
+    rangeSlider.max = 6;
+    rangeSlider.min = 0;
+    rangeSlider.value = 0;
+    rangeSlider.step = 1;
+
+    // Click listener for step buttons
+    document.querySelectorAll('.step').forEach(function(step){
+        step.addEventListener("click", function(){
+
+            // Get the current index value from the slider
+            var index = Number(document.querySelector('.range-slider').value);
+
+            // Increment or decrement depending on button clicked
+            if (step.id == 'forward'){
+                index++;
+
+                // If past the last attribute, wrap around to first attribute
+                index = index > 6 ? 0 : index;
+
+            } else if (step.id == 'reverse'){
+                index--;
+
+                // If past the first attribute, wrap around to last attribute
+                index = index < 0 ? 6 : index;
+            };
+
+            // Update slider
+            document.querySelector('.range-slider').value = index;
+
+            // Update the proportional symbols
+            updatePropSymbols(attributes[index]);
+        });
+    });
+
+    // Add input listener for the slider
+    document.querySelector('.range-slider').addEventListener('input', function () {
+
+    // Get the new index value from the slider
+    var index = this.value;
+
+    // Update the proportional symbols
+    updatePropSymbols(attributes[index]);
+    });
 };
 
 
 // Resize proportional symbols according to new attribute values
 function updatePropSymbols(attribute){
+    var year = attribute.split("_")[4];
+    
+	// Update legend
+	document.querySelector("span.year").innerHTML = year;
+    
     map.eachLayer(function(layer){
         if (layer.feature && layer.feature.properties[attribute]){
             
@@ -184,17 +264,66 @@ function updatePropSymbols(attribute){
             layer.setRadius(radius);
 
             // Build popup content string
-            var popupContent = "<p><b>" + props.State.toUpperCase() + "</b>" ;
-
-            // Add formatted attribute to panel content string
-            var year = attribute.split("_")[4];
-            popupContent += "<br><br>In <b>" + attribute.slice(-4) + "</b>, <b>" + props[attribute] + "%</b> of people 25 years old or over with a bachelor's degree are in <b>poverty</b></p>";
+            var popupContent = createPopupContent(props, attribute);
 
             // Update popup content            
             popup = layer.getPopup();            
             popup.setContent(popupContent).update();
         };
     });
+};
+
+
+// Function to create the legend
+function createLegend(attributes){
+    var LegendControl = L.Control.extend({
+        options: {
+            position: 'bottomright'
+        },
+
+        onAdd: function () {
+            // Create the control container
+            var container = L.DomUtil.create('div', 'legend-control-container');
+
+            container.innerHTML = '<p class="temporalLegend">Poverty in <span class="year">2016</span><br></p>'
+            + '<p>Combined max, mean, and min<br>values from 2016-2022</p>';
+            
+            // Start attribute legend svg string
+            var svg = '<svg id="attribute-legend" width="210px" height="80px">';
+            
+            // Array of circle names to base loop on
+            var circles = ["max", "mean", "min"];
+            
+            // Loop to add each circle and text to svg string
+            for (var i=0; i<circles.length; i++){
+                
+                // Assign the r and cy attributes  
+                var radius = (calcPropRadius(dataStats[circles[i]])*3);  
+                var cy = 60 - radius;  
+                
+                // Circle string            
+                svg += '<circle class="legend-circle" id="' + circles[i] + '" r="' + radius + '"cy="' + cy + '" fill="#f20a0a" fill-opacity="0.8" stroke="#000000" cx="30"/>';
+
+                // Evenly space out labels            
+                var textY = i * 20 + 20;
+                
+                // Text string            
+                svg += '<text id="' + circles[i] + '-text" x="95" y="' + textY + '">' + Math.round(dataStats[circles[i]]*100)/100 + "%" + '</text>';
+                
+            };
+            
+            // Close svg string
+            svg += "</svg>";
+
+            // Add attribute legend svg to container
+            container.insertAdjacentHTML('beforeend',svg);
+
+            return container;
+        }
+    });
+
+    map.addControl(new LegendControl());
+
 };
 
 
@@ -233,12 +362,18 @@ function getData(){
             // Process attributes array
 			attributes = processData(json);
         
-            // Calculate minimum data value
-            minValue = calculateMinValue(json);
+            // Calculate stats
+            calcStats(json);
         
             // Call function to create proportional symbols
             createPropSymbols(json, attributes);
-            createSequenceControls();
+        
+            // Call function to create sequence controls
+            createSequenceControls(attributes);
+        
+            // Create legend
+            createLegend(json);
+        
         })
 };
 

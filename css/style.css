@@ -4,32 +4,35 @@
     display: inline-block;
 }
 
+.sequence-control-container {  
+    width: 350px;  
+    height: 30px;  
+    background-color: rgba(255,255,255,0.8);  
+    padding: 10px;  
+    line-height: 38px;  
+    text-align: center;  
+    border: solid gray 1px;
+    border-radius: 10px;
+}  
+
 .leaflet-popup-content p {
-    border: 2px solid #ff7800;
+    border: 2px solid #f20a0a;
     padding: 12px;
     text-align: center;
     border-radius: 10px;
 }
 
-#panel {  
-    width: 25%;  
-    padding: 20px;  
-    display: inline-block;  
-    vertical-align: top;  
-    text-align: center;  
-    line-height: 42px;  
-}  
-
 .range-slider {  
-    width: 55%;
+    width: 250px;
 }  
 
 .step {  
-    width: 20%;  
+    width: 40px;  
 }  
 
 .step img {  
-    width: 100%;  
+    width: 100%;
+    height: auto;  
 }  
 
 #forward {  
@@ -38,4 +41,69 @@
 
 #reverse {  
     float: left;
+}
+
+.legend-control-container {
+	width: auto; 
+	height: atuo; 
+	background-color: rgba(255,255,255,0.6); 
+	padding: 10px; 
+	text-align: center; 
+	border: solid gray 1px;
+	font-family: courier;
+	font-size: 150%;
+	font-weight: bold;
+}
+
+.legend {
+    line-height: 18px;
+    color: #555;
+}
+.legend i {
+    width: 18px;
+    height: 18px;
+    float: left;
+    margin-right: 8px;
+    opacity: 0.7;
+}
+
+.splash-screen {
+    height: 100%;
+    width: 100%;
+    position: fixed;
+    top: 0;
+    left: 0;
+    background: rgba(218, 237, 242, 0.8);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 10000;
+}
+
+.splash-modal {
+    padding: 12px;
+    border-radius: 25px;
+    max-width: 650px;
+    text-align: center;
+    word-wrap: normal;
+    background-color: rgba(109, 126, 130);
+}
+
+.message {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 10px;
+    font-size: 18px;
+    color: white;
+    text-align: center;
+}
+
+#close-splash {
+    display: block;
+    margin: 0 auto;
+    padding: 12px 20px;
+    font-size: 18px;
+    cursor: pointer;
+    text-align: center;
 }

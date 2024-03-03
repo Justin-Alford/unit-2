@@ -12,21 +12,28 @@
         <!--[if IE<9]>
             <link rel="stylesheet" href="css/style.ie.css">
         <![endif]-->
-
     </head>
 
     <body>
+    <!-- Splash Screen -->
+    <div id="splash-screen" class="splash-screen">
+        <div class="splash-modal">
+            <div class="message">
+                <h1>Poverty in the United States</h1>
+                <p>This map shows poverty percentages in the United States among individuals<br>
+                that are over the age of 25 and have a bachelors degree.</p>
+                
+                <p>Time period: 2016 - 2022</p>
+                
+                <!-- MAP button -->
+                <button id="close-splash">MAP</button>
+            </div>
+        </div>
+    </div>
         <div id="map"></div>
-        <div id="panel"></div>
-
-        <!--you can also use this space for internal scripts;
-        place these within <script> tags-->
 
         <!--put your external script links here-->
         <script type="text/javascript" src="js/main.js"></script>
         <script type="text/javascript" src="lib/leaflet/leaflet-src.js"></script>
-        <!--<script type="text/javascript" src="js/quickstartTutorial.js"></script>-->
-        <!--<script type="text/javascript" src="js/geojsonTutorial.js"></script>-->
-        <!--<script type="text/javascript" src="js/adaptedTutorial.js"></script>-->
     </body>
 </html>
